@@ -17,6 +17,31 @@ button:hover{background:#1d4ed8;}
 .header{text-align:center;margin-bottom:20px;}
 .logout{background:#ef4444;margin-top:10px;}
 .refresh{background:#10b981;margin-bottom:10px;}
+
+/* أنماط رسائل الإشعارات */
+.notification {
+  padding: 10px;
+  border-radius: 6px;
+  margin: 10px 0;
+  text-align: center;
+  font-size: 14px;
+  display: none;
+}
+.error { 
+  background-color: #fef2f2; 
+  color: #b91c1c; 
+  border: 1px solid #fecaca;
+}
+.success { 
+  background-color: #f0fdf4; 
+  color: #166534; 
+  border: 1px solid #bbf7d0;
+}
+.info { 
+  background-color: #eff6ff; 
+  color: #1e40af; 
+  border: 1px solid #bfdbfe;
+}
 </style>
 </head>
 <body>
@@ -24,6 +49,7 @@ button:hover{background:#1d4ed8;}
 <div id="loginSection">
 <div class="header"><h2>👋 تسجيل دخول الهوستر</h2><p>أدخل رقم جوالك للبدء</p></div>
 <input type="tel" id="supervisorMobile" placeholder="رقم الجوال مثل (5xxxxxxxx)">
+<div id="loginMessage" class="notification"></div>
 <button onclick="login()">دخول</button>
 </div>
 
@@ -31,6 +57,7 @@ button:hover{background:#1d4ed8;}
 <div class="header"><h3>مرحباً، <span id="displayMobile"></span></h3></div>
 
 <h4>🔗 إنشاء رابط جديد</h4>
+<div id="appMessage" class="notification"></div>
 <input type="text" id="customerName" placeholder="اسم العميل">
 <input type="number" id="invoiceValue" placeholder="المبلغ (ر.س)">
 <button id="createBtn" onclick="createLink()">إنشاء الرابط</button>
@@ -53,10 +80,31 @@ function normalizeMobile(number){
     return number.toString().replace(/\D/g,'').replace(/^966/,'').replace(/^0/,'');
 }
 
+function showMessage(elementId, message, type) {
+    const element = document.getElementById(elementId);
+    element.textContent = message;
+    element.className = 'notification ' + type;
+    element.style.display = 'block';
+    
+    // إخفاء رسالة النجاح تلقائياً بعد 3 ثوانٍ
+    if (type === 'success') {
+        setTimeout(() => {
+            element.style.display = 'none';
+        }, 3000);
+    }
+}
+
 async function login(){
     const mobileInput = document.getElementById('supervisorMobile').value;
     currentSupervisor = normalizeMobile(mobileInput);
-    if(currentSupervisor.length<5) return alert('الرجاء إدخال رقم صحيح');
+    
+    // مسح أي رسالة سابقة
+    document.getElementById('loginMessage').style.display = 'none';
+    
+    if(currentSupervisor.length<5) {
+        showMessage('loginMessage', 'الرجاء إدخال رقم صحيح', 'error');
+        return;
+    }
 
     try{
         const res = await fetch(API_URL,{
@@ -69,17 +117,29 @@ async function login(){
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('appSection').classList.remove('hidden');
             loadHistory();
-        } else alert('خطأ: '+data.message);
-    }catch(e){ alert('حدث خطأ في الاتصال'); }
+        } else {
+            showMessage('loginMessage', 'خطأ: '+data.message, 'error');
+        }
+    }catch(e){ 
+        showMessage('loginMessage', 'حدث خطأ في الاتصال', 'error');
+    }
 }
 
 async function createLink(){
     const name = document.getElementById('customerName').value;
     const amount = document.getElementById('invoiceValue').value;
-    if(!name || !amount) return alert('أكمل البيانات');
+    
+    // مسح أي رسالة سابقة
+    document.getElementById('appMessage').style.display = 'none';
+    
+    if(!name || !amount) {
+        showMessage('appMessage', 'أكمل البيانات', 'error');
+        return;
+    }
 
     const btn = document.getElementById('createBtn');
-    btn.innerText='جاري العمل...'; btn.disabled=true;
+    btn.innerText='جاري العمل...'; 
+    btn.disabled=true;
 
     try{
         const res = await fetch(API_URL,{
@@ -94,14 +154,19 @@ async function createLink(){
         });
         const data = await res.json();
         if(data.status==='success'){
-            alert('✅ تم إنشاء الرابط');
+            showMessage('appMessage', '✅ تم إنشاء الرابط بنجاح', 'success');
             document.getElementById('customerName').value='';
             document.getElementById('invoiceValue').value='';
             loadHistory();
-        } else alert('خطأ: '+data.message);
-    }catch(e){ alert('حدث خطأ في الاتصال'); }
+        } else {
+            showMessage('appMessage', 'خطأ: '+data.message, 'error');
+        }
+    }catch(e){ 
+        showMessage('appMessage', 'حدث خطأ في الاتصال', 'error');
+    }
 
-    btn.innerText='إنشاء الرابط'; btn.disabled=false;
+    btn.innerText='إنشاء الرابط'; 
+    btn.disabled=false;
 }
 
 async function loadHistory(){
@@ -130,7 +195,9 @@ async function loadHistory(){
                 `;
             });
         } else container.innerHTML='<p style="text-align:center; color:#888">لا توجد روابط سابقة.</p>';
-    }catch(e){ container.innerHTML='<p style="text-align:center; color:red">فشل في تحميل السجل</p>'; }
+    }catch(e){ 
+        container.innerHTML='<p style="text-align:center; color:red">فشل في تحميل السجل</p>';
+    }
 }
 </script>
 </body>
