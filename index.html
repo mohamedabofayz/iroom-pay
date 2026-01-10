@@ -16,6 +16,7 @@ button:hover{background:#1d4ed8;}
 .history-item a{color:var(--primary);text-decoration:none;font-weight:bold;}
 .header{text-align:center;margin-bottom:20px;}
 .logout{background:#ef4444;margin-top:10px;}
+.refresh{background:#10b981;margin-bottom:10px;}
 </style>
 </head>
 <body>
@@ -37,6 +38,7 @@ button:hover{background:#1d4ed8;}
 <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
 
 <h4>📜 الروابط السابقة</h4>
+<button class="refresh" onclick="loadHistory()">🔄 تحديث الروابط</button>
 <div id="historyContainer">جاري التحميل...</div>
 
 <button class="logout" onclick="location.reload()">تسجيل خروج</button>
@@ -96,7 +98,7 @@ async function createLink(){
 
 async function loadHistory(){
     const container = document.getElementById('historyContainer');
-    container.innerHTML='<p style="text-align:center">تحميل...</p>';
+    container.innerHTML = '<p style="text-align:center">تحميل...</p>';
 
     try {
         const res = await fetch(API_URL, {
@@ -104,21 +106,27 @@ async function loadHistory(){
             body: JSON.stringify({ action:'get_history', supervisorMobile: currentSupervisor })
         });
         const result = await res.json();
-        container.innerHTML='';
-        if(result.data && result.data.length>0){
+        container.innerHTML = '';
+
+        if(result.data && result.data.length > 0){
             result.data.forEach(item=>{
                 const date = new Date(item.date).toLocaleDateString('ar-SA');
-                container.innerHTML+=`<div class="history-item">
-                    <div style="display:flex;justify-content:space-between;">
-                        <span>👤 ${item.customer}</span>
-                        <strong>${item.amount} SAR</strong>
+                container.innerHTML += `
+                    <div class="history-item">
+                        <div style="display:flex;justify-content:space-between;">
+                            <span>👤 ${item.customer}</span>
+                            <strong>${item.amount} SAR</strong>
+                        </div>
+                        <div style="font-size:12px;color:#666;margin:5px 0;">📅 ${date}</div>
+                        <a href="${item.url}" target="_blank">رابط الدفع ↗</a>
                     </div>
-                    <div style="font-size:12px;color:#666;margin:5px 0;">📅 ${date}</div>
-                    <a href="${item.url}" target="_blank">رابط الدفع ↗</a>
-                </div>`;
+                `;
             });
-        } else container.innerHTML='<p style="text-align:center; color:#888">لا توجد روابط سابقة.</p>';
-    } catch(e){ container.innerHTML='فشل في تحميل السجل'; }
+        } else container.innerHTML = '<p style="text-align:center; color:#888">لا توجد روابط سابقة.</p>';
+
+    } catch(e){
+        container.innerHTML = '<p style="text-align:center; color:red">فشل في تحميل السجل</p>';
+    }
 }
 </script>
 </body>
