@@ -47,47 +47,78 @@ button:hover{background:#1d4ed8;}
 const API_URL = 'https://script.google.com/macros/s/AKfycbwRFFkOV2ahGtU5_YDUJiwRrAukvprOVNUmnx9IzTlaZEw2PpmJwSD4Ncl4zbIV83LO/exec';
 let currentSupervisor = '';
 
-function login(){
-  const mobile=document.getElementById('supervisorMobile').value;
-  if(mobile.length<5)return alert('الرجاء إدخال رقم صحيح');
-  currentSupervisor=mobile;
-  document.getElementById('displayMobile').innerText=mobile;
-  document.getElementById('loginSection').classList.add('hidden');
-  document.getElementById('appSection').classList.remove('hidden');
-  loadHistory();
+async function login(){
+    const mobile = document.getElementById('supervisorMobile').value;
+    if(mobile.length<5) return alert('الرجاء إدخال رقم صحيح');
+
+    try {
+        const res = await fetch(API_URL, {
+            method:'POST',
+            body: JSON.stringify({ action:'get_supervisor_name', supervisorMobile: mobile })
+        });
+        const data = await res.json();
+        if(data.status === 'success'){
+            currentSupervisor = mobile;
+            document.getElementById('displayMobile').innerText = data.name;
+            document.getElementById('loginSection').classList.add('hidden');
+            document.getElementById('appSection').classList.remove('hidden');
+            loadHistory();
+        } else {
+            alert('خطأ: ' + data.message);
+        }
+    } catch(e){ alert('حدث خطأ في الاتصال'); }
 }
 
 async function createLink(){
-  const name=document.getElementById('customerName').value;
-  const amount=document.getElementById('invoiceValue').value;
-  if(!name||!amount)return alert('أكمل البيانات');
-  const btn=document.getElementById('createBtn');
-  btn.innerText='جاري العمل...'; btn.disabled=true;
+    const name = document.getElementById('customerName').value;
+    const amount = document.getElementById('invoiceValue').value;
+    if(!name || !amount) return alert('أكمل البيانات');
 
-  try{
-    const res=await fetch(API_URL,{
-      method:'POST',
-      body:JSON.stringify({action:'create_link',supervisorMobile:currentSupervisor,customerName:name,invoiceValue:amount,customerMobile:''})
-    });
-    const data=await res.json();
-    if(data.status==='success'){alert('✅ تم إنشاء الرابط');document.getElementById('customerName').value='';document.getElementById('invoiceValue').value='';loadHistory();}
-    else alert('خطأ: '+data.message);
-  }catch(e){alert('حدث خطأ في الاتصال');}
-  btn.innerText='إنشاء الرابط'; btn.disabled=false;
+    const btn = document.getElementById('createBtn');
+    btn.innerText = 'جاري العمل...'; btn.disabled = true;
+
+    try {
+        const res = await fetch(API_URL, {
+            method:'POST',
+            body: JSON.stringify({ action:'create_link', supervisorMobile: currentSupervisor, customerName: name, invoiceValue: amount, customerMobile:'' })
+        });
+        const data = await res.json();
+        if(data.status === 'success'){
+            alert('✅ تم إنشاء الرابط');
+            document.getElementById('customerName').value='';
+            document.getElementById('invoiceValue').value='';
+            loadHistory();
+        } else alert('خطأ: ' + data.message);
+    } catch(e){ alert('حدث خطأ في الاتصال'); }
+
+    btn.innerText = 'إنشاء الرابط'; btn.disabled = false;
 }
 
 async function loadHistory(){
-  const container=document.getElementById('historyContainer');container.innerHTML='<p style="text-align:center">تحميل...</p>';
-  try{
-    const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({action:'get_history',supervisorMobile:currentSupervisor})});
-    const result=await res.json(); container.innerHTML='';
-    if(result.data&&result.data.length>0){
-      result.data.forEach(item=>{
-        const date=new Date(item.date).toLocaleDateString('ar-SA');
-        container.innerHTML+=`<div class="history-item"><div style="display:flex;justify-content:space-between;"><span>👤 ${item.customer}</span><strong>${item.amount} SAR</strong></div><div style="font-size:12px;color:#666;margin:5px 0;">📅 ${date}</div><a href="${item.url}" target="_blank">رابط الدفع ↗</a></div>`;
-      });
-    } else container.innerHTML='<p style="text-align:center; color:#888">لا توجد روابط سابقة.</p>';
-  }catch(e){container.innerHTML='فشل في تحميل السجل';}
+    const container = document.getElementById('historyContainer');
+    container.innerHTML='<p style="text-align:center">تحميل...</p>';
+
+    try {
+        const res = await fetch(API_URL, {
+            method:'POST',
+            body: JSON.stringify({ action:'get_history', supervisorMobile: currentSupervisor })
+        });
+        const result = await res.json();
+        container.innerHTML='';
+        if(result.data && result.data.length>0){
+            result.data.forEach(item=>{
+                const date = new Date(item.date).toLocaleDateString('ar-SA');
+                container.innerHTML+=`<div class="history-item">
+                    <div style="display:flex;justify-content:space-between;">
+                        <span>👤 ${item.customer}</span>
+                        <strong>${item.amount} SAR</strong>
+                    </div>
+                    <div style="font-size:12px;color:#666;margin:5px 0;">📅 ${date}</div>
+                    <a href="${item.url}" target="_blank">رابط الدفع ↗</a>
+                </div>`;
+            });
+        } else container.innerHTML='<p style="text-align:center; color:#888">لا توجد روابط سابقة.</p>';
+    } catch(e){ container.innerHTML='فشل في تحميل السجل'; }
 }
 </script>
 </body>
