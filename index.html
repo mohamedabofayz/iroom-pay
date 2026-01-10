@@ -5,143 +5,90 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>بوابة المدفوعات iroom pay</title>
 <style>
-    :root { --primary: #2563eb; --bg: #f3f4f6; }
-    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); margin:0; padding:20px; }
-    .container { max-width:500px; margin:0 auto; background:white; padding:25px; border-radius:12px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.1); }
-    .hidden { display:none; }
-    input, button { width:100%; padding:12px; margin-bottom:12px; border-radius:8px; border:1px solid #ddd; box-sizing:border-box; }
-    button { background:var(--primary); color:white; border:none; font-weight:bold; cursor:pointer; transition:0.3s; }
-    button:hover { background:#1d4ed8; }
-    .history-item { border-right:4px solid var(--primary); background:#f8fafc; padding:10px; margin-bottom:10px; border-radius:4px; }
-    .history-item a { color:var(--primary); text-decoration:none; font-weight:bold; }
-    .header { text-align:center; margin-bottom:20px; }
-    .logout { background:#ef4444; margin-top:10px; }
+:root { --primary:#2563eb; --bg:#f3f4f6; }
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);margin:0;padding:20px;}
+.container{max-width:500px;margin:0 auto;background:white;padding:25px;border-radius:12px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1);}
+.hidden{display:none;}
+input,button{width:100%;padding:12px;margin-bottom:12px;border-radius:8px;border:1px solid #ddd;box-sizing:border-box;}
+button{background:var(--primary);color:white;border:none;font-weight:bold;cursor:pointer;transition:0.3s;}
+button:hover{background:#1d4ed8;}
+.history-item{border-right:4px solid var(--primary);background:#f8fafc;padding:10px;margin-bottom:10px;border-radius:4px;}
+.history-item a{color:var(--primary);text-decoration:none;font-weight:bold;}
+.header{text-align:center;margin-bottom:20px;}
+.logout{background:#ef4444;margin-top:10px;}
 </style>
 </head>
 <body>
-
 <div class="container">
-    <div id="loginSection">
-        <div class="header">
-            <h2>👋 تسجيل دخول الهوستر</h2>
-            <p>أدخل رقم جوالك للبدء</p>
-        </div>
-        <input type="tel" id="supervisorMobile" placeholder="رقم الجوال مثل (5xxxxxxxx)">
-        <button onclick="login()">دخول</button>
-    </div>
+<div id="loginSection">
+<div class="header"><h2>👋 تسجيل دخول الهوستر</h2><p>أدخل رقم جوالك للبدء</p></div>
+<input type="tel" id="supervisorMobile" placeholder="رقم الجوال مثل (5xxxxxxxx)">
+<button onclick="login()">دخول</button>
+</div>
 
-    <div id="appSection" class="hidden">
-        <div class="header">
-            <h3>مرحباً، <span id="displayMobile"></span></h3>
-        </div>
+<div id="appSection" class="hidden">
+<div class="header"><h3>مرحباً، <span id="displayMobile"></span></h3></div>
 
-        <h4>🔗 إنشاء رابط جديد</h4>
-        <input type="text" id="customerName" placeholder="اسم العميل">
-        <input type="number" id="invoiceValue" placeholder="المبلغ (ر.س)">
-        <button id="createBtn" onclick="createLink()">إنشاء الرابط</button>
+<h4>🔗 إنشاء رابط جديد</h4>
+<input type="text" id="customerName" placeholder="اسم العميل">
+<input type="number" id="invoiceValue" placeholder="المبلغ (ر.س)">
+<button id="createBtn" onclick="createLink()">إنشاء الرابط</button>
 
-        <hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
+<hr style="margin:20px 0; border:0; border-top:1px solid #eee;">
 
-        <h4>📜 الروابط السابقة</h4>
-        <div id="historyContainer">جاري التحميل...</div>
+<h4>📜 الروابط السابقة</h4>
+<div id="historyContainer">جاري التحميل...</div>
 
-        <button class="logout" onclick="location.reload()">تسجيل خروج</button>
-    </div>
+<button class="logout" onclick="location.reload()">تسجيل خروج</button>
+</div>
 </div>
 
 <script>
-    // 🔴 ضع رابط شيتك هنا 🔴
-    const API_URL = 'https://script.google.com/macros/s/AKfycbwRFFkOV2ahGtU5_YDUJiwRrAukvprOVNUmnx9IzTlaZEw2PpmJwSD4Ncl4zbIV83LO/exec';
+const API_URL = 'https://script.google.com/macros/s/YOUR_WEB_APP_ID/exec';
+let currentSupervisor = '';
 
-    let currentSupervisor = '';
+function login(){
+  const mobile=document.getElementById('supervisorMobile').value;
+  if(mobile.length<5)return alert('الرجاء إدخال رقم صحيح');
+  currentSupervisor=mobile;
+  document.getElementById('displayMobile').innerText=mobile;
+  document.getElementById('loginSection').classList.add('hidden');
+  document.getElementById('appSection').classList.remove('hidden');
+  loadHistory();
+}
 
-    function login() {
-        const mobile = document.getElementById('supervisorMobile').value;
-        if (mobile.length < 5) return alert('الرجاء إدخال رقم صحيح');
-        
-        currentSupervisor = mobile;
-        document.getElementById('displayMobile').innerText = mobile;
-        
-        document.getElementById('loginSection').classList.add('hidden');
-        document.getElementById('appSection').classList.remove('hidden');
-        
-        loadHistory();
-    }
+async function createLink(){
+  const name=document.getElementById('customerName').value;
+  const amount=document.getElementById('invoiceValue').value;
+  if(!name||!amount)return alert('أكمل البيانات');
+  const btn=document.getElementById('createBtn');
+  btn.innerText='جاري العمل...'; btn.disabled=true;
 
-    async function createLink() {
-        const name = document.getElementById('customerName').value;
-        const amount = document.getElementById('invoiceValue').value;
-        if (!name || !amount) return alert('أكمل البيانات');
+  try{
+    const res=await fetch(API_URL,{
+      method:'POST',
+      body:JSON.stringify({action:'create_link',supervisorMobile:currentSupervisor,customerName:name,invoiceValue:amount,customerMobile:''})
+    });
+    const data=await res.json();
+    if(data.status==='success'){alert('✅ تم إنشاء الرابط');document.getElementById('customerName').value='';document.getElementById('invoiceValue').value='';loadHistory();}
+    else alert('خطأ: '+data.message);
+  }catch(e){alert('حدث خطأ في الاتصال');}
+  btn.innerText='إنشاء الرابط'; btn.disabled=false;
+}
 
-        const btn = document.getElementById('createBtn');
-        btn.innerText = 'جاري العمل...';
-        btn.disabled = true;
-
-        try {
-            const res = await fetch(API_URL, {
-                method:'POST',
-                body: JSON.stringify({
-                    action: 'create_link',
-                    supervisorMobile: currentSupervisor,
-                    customerName: name,
-                    invoiceValue: amount,
-                    customerMobile: ''
-                })
-            });
-            const data = await res.json();
-
-            if(data.status==='success') {
-                alert('✅ تم إنشاء الرابط');
-                document.getElementById('customerName').value = '';
-                document.getElementById('invoiceValue').value = '';
-                loadHistory();
-            } else {
-                alert('خطأ: ' + data.message);
-            }
-        } catch(e) {
-            alert('حدث خطأ في الاتصال');
-        }
-
-        btn.innerText = 'إنشاء الرابط';
-        btn.disabled = false;
-    }
-
-    async function loadHistory() {
-        const container = document.getElementById('historyContainer');
-        container.innerHTML = '<p style="text-align:center">تحميل...</p>';
-
-        try {
-            const res = await fetch(API_URL, {
-                method:'POST',
-                body: JSON.stringify({
-                    action:'get_history',
-                    supervisorMobile: currentSupervisor
-                })
-            });
-            const result = await res.json();
-
-            container.innerHTML = '';
-            if(result.data && result.data.length>0){
-                result.data.forEach(item=>{
-                    const date = new Date(item.date).toLocaleDateString('ar-SA');
-                    container.innerHTML += `
-                        <div class="history-item">
-                            <div style="display:flex; justify-content:space-between;">
-                                <span>👤 ${item.customer}</span>
-                                <strong>${item.amount} SAR</strong>
-                            </div>
-                            <div style="font-size:12px; color:#666; margin:5px 0;">📅 ${date}</div>
-                            <a href="${item.url}" target="_blank">رابط الدفع ↗</a>
-                        </div>`;
-                });
-            } else {
-                container.innerHTML = '<p style="text-align:center; color:#888">لا توجد روابط سابقة.</p>';
-            }
-        } catch(e) {
-            container.innerHTML = 'فشل في تحميل السجل';
-        }
-    }
+async function loadHistory(){
+  const container=document.getElementById('historyContainer');container.innerHTML='<p style="text-align:center">تحميل...</p>';
+  try{
+    const res=await fetch(API_URL,{method:'POST',body:JSON.stringify({action:'get_history',supervisorMobile:currentSupervisor})});
+    const result=await res.json(); container.innerHTML='';
+    if(result.data&&result.data.length>0){
+      result.data.forEach(item=>{
+        const date=new Date(item.date).toLocaleDateString('ar-SA');
+        container.innerHTML+=`<div class="history-item"><div style="display:flex;justify-content:space-between;"><span>👤 ${item.customer}</span><strong>${item.amount} SAR</strong></div><div style="font-size:12px;color:#666;margin:5px 0;">📅 ${date}</div><a href="${item.url}" target="_blank">رابط الدفع ↗</a></div>`;
+      });
+    } else container.innerHTML='<p style="text-align:center; color:#888">لا توجد روابط سابقة.</p>';
+  }catch(e){container.innerHTML='فشل في تحميل السجل';}
+}
 </script>
-
 </body>
 </html>
